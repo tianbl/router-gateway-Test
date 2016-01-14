@@ -32,12 +32,12 @@ public class SQLite
 	}
 	
 	public static int setGatewayDB(String db,String username,Map<String,Object> map){
-		return resetPwd(db,username)+updatePara(db,map);
+		return resetPwd(db,username, (String) map.get("pwd"))+updatePara(db,map);
 	}
-	public static int resetPwd(String db, String username)
+	public static int resetPwd(String db, String username,String passwd)
 	{
 		String sql = "INSERT INTO Account(username,passwd,granted_privilege,alias)"
-				+ "VALUES('"+username+"','"+pwd+"','0','')";
+				+ "VALUES('"+username+"','"+passwd+"','0','')";
 		return cexecuteSql(db, sql);
 	}
 	public static int updatePara(String db,Map<String,Object> map){

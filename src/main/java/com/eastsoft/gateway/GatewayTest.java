@@ -50,11 +50,13 @@ public class GatewayTest extends JPanel {
 	private JButton allTest_JButton;
 	// 分项测试按钮组
 	private JButton[] signalTest_JButton;
-	private String[] buttonTitle = { "1.测试WAN和LAN口", "2.信息设置", "3.测试wifi", "4.测试 串口", "5.测试USB" };
+	private String[] buttonTitle = { "1.测试WAN和LAN口", "2.测试USB", "3.测试wifi", "4.测试 串口", "5.信息设置" };
 
 	private ButtonActionListener buttonActionListener;
 
 	private ServerInfo mysqlOperation = null; // 获取资源信息
+
+    private boolean showDialog = true;
 
 	public GatewayTest() {
 		super();
@@ -111,8 +113,12 @@ public class GatewayTest extends JPanel {
 			String buttonName = arg.getActionCommand();
 			final String gateway_IP = gatewayGeneralSet.getGateway_IP();
 			final String host_IP = gatewayGeneralSet.getLocal_IP();
+			Map<String, String> qrcodeInfo = gatewayGeneralSet.getQrCode_Info();
 
-			if ("一键测试".equals(buttonName)) {
+			if(null==qrcodeInfo||qrcodeInfo.size()==0){
+				GatewayJFrame.showMssageln("手动测试环节发生错误,原因无法获得解析二维码信息,可能是格式错误或者未输入条码信息导致...");
+			}else if ("一键测试".equals(buttonName)) {
+				GatewayJFrame.showMssageln("手动进行一键测试,被测设备SN="+qrcodeInfo.get("sn"));
 				new Thread(new Runnable() {
 					@Override
 					public void run() {
@@ -121,6 +127,7 @@ public class GatewayTest extends JPanel {
 					}
 				}).start();
 			} else {
+				GatewayJFrame.showMssageln("单项测试,被测设备SN="+qrcodeInfo.get("sn"));
 				for (int i = 0; i < buttonTitle.length; i++) {
 					if (buttonTitle[i].equals(buttonName)) {
 						final int lastIndex = buttonTitle.length - 1;
@@ -138,7 +145,7 @@ public class GatewayTest extends JPanel {
 							new Thread(new Runnable() {
 								@Override
 								public void run() { // 启动线程执行后续操作
-									setGatewayInfo(gateway_IP, host_IP);
+                                    UsbTest(gateway_IP, host_IP);
 								}
 							}).start();
 							break;
@@ -166,7 +173,7 @@ public class GatewayTest extends JPanel {
 							new Thread(new Runnable() {
 								@Override
 								public void run() {
-									UsbTest(gateway_IP, host_IP);
+                                    setGatewayInfo(gateway_IP, host_IP);
 								}
 							}).start();
 							;
@@ -197,12 +204,12 @@ public class GatewayTest extends JPanel {
 				return false;
 			}
 		}
-		if (false == setGatewayInfo(gateway_ip, localhost_ip)) {
-			int i = JOptionPane.showConfirmDialog(this, "信息设置发生错误，是否继续其他测试？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
-			if (0 != i) {
-				return false;
-			}
-		}
+        if (false == UsbTest(gateway_ip, localhost_ip)) {
+            int i = JOptionPane.showConfirmDialog(this, "USB测试发生错误，是否继续其他测试？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (0 != i) {
+                return false;
+            }
+        }
 		if (false == wifi_Test(gateway_ip, localhost_ip)) {
 			int i = JOptionPane.showConfirmDialog(this, "wifi测试发生错误，是否继续其他测试？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (0 != i) {
@@ -215,12 +222,12 @@ public class GatewayTest extends JPanel {
 				return false;
 			}
 		}
-		if (false == UsbTest(gateway_ip, localhost_ip)) {
-			int i = JOptionPane.showConfirmDialog(this, "USB测试发生错误，是否继续其他测试？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
-			if (0 != i) {
-				return false;
-			}
-		}
+        if (false == setGatewayInfo(gateway_ip, localhost_ip)) {
+            int i = JOptionPane.showConfirmDialog(this, "信息设置发生错误，是否继续其他测试？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (0 != i) {
+                return false;
+            }
+        }
 		return true;
 	}
 
@@ -266,24 +273,23 @@ public class GatewayTest extends JPanel {
 
 	// 设置信息
 	private boolean setGatewayInfo(String gateway_IP, String hostIP) {
-		GatewayJFrame.showMssageln(">>>>>>>>>>>>>>>>>>>>>2.设置路由器网关信息<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+		GatewayJFrame.showMssageln(">>>>>>>>>>>>>>>>>>>>>5.设置路由器网关信息<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 		Map<String, Object> serverInfo = null;
-
-		// 获取MAC地址
 		Connect connect = GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23);
+        Map<String, String> qrcodeInfo = gatewayGeneralSet.getQrCode_Info();
+        if (null == qrcodeInfo||qrcodeInfo.size()==0) {       // 获取标签信息
+            GatewayJFrame.showMssage("获取二维码标签信息失败 ！\n");
+            return false;
+        }
 		if (null == connect) {
 			// GatewayJFrame.showMssageln("");
 			return false;
 		}
-		if (null == macMap) {
-			macMap = getMac(connect);
-		}
-
-		// 获取标签信息
-		Map<String, String> qrcodeInfo = gatewayGeneralSet.getQrCode_Info();
-		if (null == qrcodeInfo) {
-			GatewayJFrame.showMssage("获取二维码标签信息失败 ！\n");
-			return false;
+		if (null == macMap) {       // 获取MAC地址
+			if((macMap = getMac(connect))==null){
+				GatewayJFrame.showMssageln("获取设备MAC失败...");
+				return false;
+			}
 		}
 
 		{// 查询服务器信息
@@ -295,52 +301,52 @@ public class GatewayTest extends JPanel {
 				GatewayJFrame.showMssage("使用导出到本地的execl文件获取资源信息...\n");
 				mysqlOperation = new XlsOperation(serverSet.getRealPath());
 			} else {
-				GatewayJFrame.showMssage(serverSet.getServerIP() + "\n" + serverSet.getUSername() + "\n");
+				GatewayJFrame.showMssage("数据库服务器IP:"+serverSet.getServerIP()
+                        + "\n数据库登陆用户:" + serverSet.getUSername() + "\n");
 				mysqlOperation = new MysqlOperation(serverSet.getServerIP(), serverSet.getUSername(),
 						serverSet.getPasswd());
 			}
 
 			GatewayJFrame.showMssage("从资源服务器获取信息...\n");
-			Map<String, Object> map = mysqlOperation.getServerInfo("sn", qrcodeInfo.get("sn")); // 通过gid查询
-			if (null == map) {
+            serverInfo = mysqlOperation.getServerInfo("sn", qrcodeInfo.get("sn")); // 通过SN查询
+			if (null == serverInfo) {
 				GatewayJFrame.showMssageln("查询不到数据！");
 				return false;
 			} else {
-				serverInfo = map;
 				if (!serverSet.isLocalSelected()) {
-					int gid = Integer.parseInt((String)serverInfo.get("gid"),16);
+                    String gid_str = (String)serverInfo.get("gid");
+					int gid = Integer.parseInt(gid_str,16);
 					serverInfo.put("gid", Integer.toString(gid));
+                    GatewayJFrame.showMssageln("使用远程数据库,将16进制gid转为10进制:" + gid_str + "->"+gid);
 				}
 			}
 		}
-
-		// 检查信息，标志位为U则表示该条信息已经设置使用过 ，并设置
-//		if (null == serverInfo || "U".equals(serverInfo.get("mac_label"))) {
-		if (null == serverInfo || "U".equals(serverInfo.get("MAClabel"))) {
+		if (null == serverInfo || "U".equals(serverInfo.get("MAClabel"))) { //检查数据是否被使用，U表示已用
 			GatewayJFrame.showMssageln("信息已使用，信息设置操作结束！");
 			return false;
 		}
-
 		// 标签信息和数据库对比
 		boolean gid = qrcodeInfo.get("gid").equals(serverInfo.get("gid"));
 		boolean pwd = qrcodeInfo.get("pwd").equals(serverInfo.get("pwd"));
 		boolean sn = qrcodeInfo.get("sn").equals(serverInfo.get("sn"));
 		if (gid && pwd && sn) {
-			GatewayJFrame.showMssageln("正在进行路由器网关信息设置...");
+			GatewayJFrame.showMssageln("信息正确,进行路由器网关信息设置...");
 		} else {
 			GatewayJFrame.showMssageln("资源服务器信息标签信息不一致,测试结束！");
 			return false;
 		}
 
-		// 设置数据库信息到数据库
-		{
+		{// 设置数据库信息到数据库
 			String db = getNowPath() + "/" + Para.gateway;
 			try {
 				ToolUtil.deleteFileByFilename(db);
+                Thread.sleep(1000);
+                GatewayJFrame.showMssageln(Para.pcgateway + "==========>" + Para.gateway);
 				ToolUtil.copyFile(getNowPath() + "/" + Para.pcgateway, db);
+				Thread.sleep(1000);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				GatewayJFrame.showMssageln(Para.pcgateway + "=====>" + Para.gateway + " 数据库生成失败");
+				GatewayJFrame.showMssageln(Para.pcgateway + "==========>" + Para.gateway + " 数据库生成失败");
 				e.printStackTrace();
 				return false;
 			}
@@ -357,16 +363,34 @@ public class GatewayTest extends JPanel {
 				return false;
 			}
 			// 路由器网关下载设置好的数据库
+            String path = getNowPath();
+            String originalBakPath = path+"/data/"+serverInfo.get("sn")+Para.gateway;
 			if (!Database.dbupdateDB(connect, Para.gateway, hostIP)) {
 				GatewayJFrame.showMssageln("结束当前操作...");
 				return false;
-			}
+			}else {
+                try {
+                    File file = new File(path+"/data");
+                    if(!file.exists()){
+                        file.mkdirs();
+                    }
+                    GatewayJFrame.showMssageln("数据库下载完成,将.db文件备份到"+path+"/data 目录，\n" +
+                            "备份命名为" +serverInfo.get("sn")+Para.gateway);
+                    ToolUtil.copyFile(path+"/"+Para.gateway,originalBakPath);
+                    ToolUtil.deleteFileByFilename(path + "/" + Para.gateway);
+                    Thread.sleep(800);
+                } catch (Exception e) {
+                    GatewayJFrame.showMssageln("网关gateway.db下载成功,备份数据库到data目录过程发生异常\n" +
+                            "请手工验证网关.db文件的正确性或者重新进行此步骤...");
+                    e.printStackTrace();
+                    return false;
+                }
+            }
 
-			if(Database.checkGatewayDb(connect, (String) serverInfo.get("gid"), hostIP, Para.gateway, getNowPath(),
-					serverInfo)){
+			if(Database.checkGatewayDb(connect, hostIP, Para.gateway, getNowPath(), originalBakPath)){
 				int setUsed = mysqlOperation.setUsed("sn", (String) serverInfo.get("sn"), macMap);
 				if (setUsed <= 0) {
-					GatewayJFrame.showMssageln("同步资源服务器信息失败！若是使用本地的execl文件，请检查execl是否在窗口打开，如果打开请关闭！");
+					GatewayJFrame.showMssageln("同步资源服务器信息失败！若是使用本地的execl文件，可能的原因是已被打开！");
 					return false;
 				}else{
 					GatewayJFrame.showMssageln("同步资源服务器信息成功,信息设置完成！");
@@ -375,7 +399,6 @@ public class GatewayTest extends JPanel {
 			}else{
 				return false;
 			}
-			
 		}
 //		GatewayJFrame.showMssageln("信息设置完成！");
 //		return true;
@@ -400,31 +423,39 @@ public class GatewayTest extends JPanel {
 			
 			String disabled = "netsh interface set interface name=\""+wifiInterface+"\" admin=DISABLED";
 			String enabled = "netsh interface set interface name=\""+wifiInterface+"\" admin=ENABLED";
-			if (Ping.executeCmd(disabled)) {
+			if (showDialog&&Ping.executeCmd(disabled)) {
 				if (Ping.executeCmd(enabled)) {
 					GatewayJFrame.showMssageln("wifi重启成功...");
 				}
-			}else{
+			}else if(showDialog){
 				GatewayJFrame.showMssageln("无法重启无线...");
-				int i = JOptionPane.showConfirmDialog(this, "无法重启无线网卡，是否手动连接无线后继续？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
-				if (0 != i) {
+                Object[] titles = {"继续","继续并不再提示","取消"};
+				int i = JOptionPane.showOptionDialog(this, "无法重启无线网卡，是否继续？", "提示",
+                        JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,null,titles,titles[0]);
+                GatewayJFrame.showMssageln("i=="+i);
+				if(i==1){
+                    showDialog = false;
+                }else if (i==2) {
 					return false;
 				}
 			}
 		}
 
 		String wifi_connectIP = null;
-		if (null == macMap) {
-			macMap = getMac(GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23));
-		}
+//		if (null == macMap) {
+//			macMap = getMac(GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23));
+//		}
 		Connect telnet = GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23);
 		String getssid = telnet.sendCommand("uci get wireless.@wifi-iface[0].ssid");
 		
 		String ssid = null;
-		if (getssid.split("\r\n").length > 2) {
+		if(getssid.contains("with error command not found")){
+			return false;
+		}else if (getssid.split("\r\n").length > 2) {
 			ssid = getssid.split("\r\n")[1];
 		}else{
 			GatewayJFrame.showMssageln("查询无线命令执行结果格式不符合程序要求"+getssid);
+			return false;
 		}
 		telnet.disconnect();
 //		String ssid = "Eastsoft_" + wifiMac.substring(wifiMac.length() - 6);
@@ -434,18 +465,6 @@ public class GatewayTest extends JPanel {
 			GatewayJFrame.showMssageln(ssid + "wifi信号强度：" + wifiStrength);
 		} else {
 			GatewayJFrame.showMssageln("检测不到有关wifi " + ssid + "的信息...");
-//			Connect telnet = GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23);
-//			String gid = telnet.sendCommand("uci get wireless.@wifi-iface[0].ssid");
-//			ssid = "Eastsoft_"+gid.split("\r\n")[1];
-////			Map<String,String> map = GatewayGeneralSet.getInstance().getQrCode_Info();
-////			ssid = "Eastsoft_"+map.get("gid");
-//			wifiStrength = Ping.getWifiStrength(ssid);
-//			if (null == wifiStrength) {
-//				GatewayJFrame.showMssageln("检测不到有关wifi " + ssid + "的信息...");
-//			}else{
-//				GatewayJFrame.showMssageln(ssid + "wifi信号强度：" + wifiStrength);
-//			}
-//			telnet.disconnect();
 		}
 		String connectWifi = "netsh wlan connect name=\"" + ssid + "\" ssid=\""+ ssid + "\" interface=\""
 				+ wifiInterface+"\"";
@@ -458,29 +477,16 @@ public class GatewayTest extends JPanel {
 		if (Ping.executeCmd(addConfig)) {
 			// GatewayJFrame.showMssageln("");
 		}
-		
 
 		// wifi尝试3次连接，
-		GatewayJFrame.showMssageln("连接wifi将进行3次连接尝试...");
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		GatewayJFrame.showMssageln("wifi将进行3次连接尝试...");
 		for (int i = 0; i < 3; i++) {
-			GatewayJFrame.showMssageln("正在进行第" + (i + 1) + "次连接");
+			GatewayJFrame.showMssageln("第" + (i + 1) + "次连接");
 			if (false == Ping.executeCmd(connectWifi)) {
-				try {
-					Thread.sleep(1500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				if (i >= 2) {
 					String alarmInfo = "请自行连接无线" + ssid + ",然后继续...";
 					int select = JOptionPane.showConfirmDialog(this, alarmInfo, "提示", JOptionPane.YES_NO_CANCEL_OPTION);
-					if (0 != i) {
+					if (0 != select) {
 						GatewayJFrame.showMssageln("无法连接wifi：" + ssid);
 						Ping.executeCmd(deleteConfig);
 						return false;
@@ -493,29 +499,32 @@ public class GatewayTest extends JPanel {
 			} else {
 				break;
 			}
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 		}
 
 		// 尝试3次 获取ip，以减少因为获取不到ip导致的虚假测试失败
 		for (int i = 0; i < 3; i++) {
 			try {
-				Thread.sleep(1500);
+				Thread.sleep((5-i)*1000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			wifi_connectIP = Ping.getWifiIP(hostIp);
 			if (null == wifi_connectIP) {
-				GatewayJFrame.showMssageln("第" + (i + 1) + "次尝试获取wifiIP...");
+				GatewayJFrame.showMssageln((5-i)+"秒后进行第" + (i + 1) + "次尝试获取wifiIP...");
 			} else {
 				GatewayJFrame.showMssageln("成功获取到wifi IP:" + wifi_connectIP);
 				break;
 			}
 		}
 
-		// 删除测试wifi配置文件
-
 		if (null == wifi_connectIP) {
-			GatewayJFrame.showMssageln("无法获取连接到的wifiIP,请先手动连接路由器网关的wifi再继续测试！");
+			GatewayJFrame.showMssageln("无法获取连接到的wifiIP,请重新测试本项！");
 			Ping.executeCmd(disconnect);
 			Ping.executeCmd(deleteConfig);
 			return false;
@@ -566,28 +575,41 @@ public class GatewayTest extends JPanel {
 	}
 
 	public boolean UsbTest(String gateway_IP, String localhost_IP) {
-		GatewayJFrame.showMssageln(">>>>>>>>>>>>>>>>>>>>>5.USB测试<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+		GatewayJFrame.showMssageln(">>>>>>>>>>>>>>>>>>>>>2.USB测试<<<<<<<<<<<<<<<<<<<<<<<<<<<");
 		Connect connect = GatewayJFrame.getInstance().telnetGateway(gateway_IP, 23);
-		if (false == Database.uploadFileOfUsb(connect, localhost_IP)) {
-			return false;
+		String localPath = getNowPath() + "\\smartRouter\\testFile.txt";
+		String uploadPath = getNowPath() + "\\testFile.txt";
+		if(ToolUtil.isFileExist(uploadPath)){
+			GatewayJFrame.showMssageln("删除已上传存在的测试文件...");
+			ToolUtil.deleteFileByFilename(uploadPath);
+			try{
+				Thread.sleep(1000);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
 		}
-
+		if (false == Database.uploadFileOfUsb(connect, localhost_IP)) {
+            connect.disconnect();
+			return false;
+		}else {
+            connect.disconnect();
+        }
 		// 文件内容比较
-		String file1 = getNowPath() + "\\smartRouter\\testFile.txt";
-		String file2 = getNowPath() + "\\testFile.txt";
-		String localFile = ToolUtil.txt2String(file1);
-		String uploadFile = ToolUtil.txt2String(file2);
-		if (localFile != null && localFile.equals(uploadFile)) {
-			GatewayJFrame.showMssageln("本地约定文件：" + localFile + "\n路由器usb测试设备文件内容:" + uploadFile);
-			GatewayJFrame.showMssageln("智能路由器网关USB设备文件读取正常，测试通过");
+//		String localFile = ToolUtil.txt2String(file1);
+//		String uploadFile = ToolUtil.txt2String(file2);
+        String localFile = ToolUtil.calMd5FromFile(localPath);
+        String uploadFile = ToolUtil.calMd5FromFile(uploadPath);
+		GatewayJFrame.showMssageln("本地约定文件md5码:" + localFile + "\n路由器usb测试文件md5码:" + uploadFile);
+		if (localFile != null && localFile.equalsIgnoreCase(uploadFile)) {
+			GatewayJFrame.showMssageln("智能路由器网关USB设备文件内容与本地约定文件内容相同，USB测试通过");
 		} else {
-			GatewayJFrame.showMssageln("智能路由器网关USB设备文件内容与本地约定文件内容不同，测试不通过");
+			GatewayJFrame.showMssageln("智能路由器网关USB设备文件内容与本地约定文件内容不同，USB测试不通过");
 			return false;
 		}
 		return true;
 	}
 
-	private String getNowPath() {
+	public String getNowPath() {
 		File directory = new File(".");
 		try {
 			return directory.getCanonicalPath();
@@ -602,8 +624,12 @@ public class GatewayTest extends JPanel {
 			GatewayJFrame.showMssageln("智能路由器telnet连接失败，无法获取MAC...");
 			return null;
 		}
-		String[] linkShow = connect.sendCommand("link show").split("\r\n");
+		String res = connect.sendCommand("link show");
+		String[] linkShow = res.split("\r\n");
 		Map<String, String> map = new HashMap();
+		if(res.contains("with error command not found")){
+			return null;
+		}
 		for (String str : linkShow) {
 			if (str.contains("lan") && str.contains("wifi") && str.contains("wan")) {
 				String[] mac = str.split(" ");

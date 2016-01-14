@@ -221,7 +221,7 @@ public class Connect {
 					if (sb.toString().endsWith(pattern)) {
 						byte[] temp1 = sb.substring(end, sb.length() - 1).getBytes("ISO8859-1");
 						String str = new String(temp1, "GBK");
-						GatewayJFrame.showMssage(str +"count="+count+ "\n");
+//						GatewayJFrame.showMssage(str +"count="+count+ "\n");
 						// 传输过来的字符串为ISO8859-1，需要转换为GBK格式的
 						byte[] temp = sb.toString().getBytes("ISO8859-1");
 						return new String(temp, "GBK");
@@ -250,22 +250,40 @@ public class Connect {
 	 * @return
 	 */
 	public String sendCommandLiner(String command) {
+		String res = null;
 		try {
 			write(command);
-			return readUntilLiner(prompt + "");
+			res = readUntilLiner(prompt + "");
+			String baseCmd = command.substring(0,command.indexOf(" "));
+			if(res.contains("-ash: "+baseCmd+": not found")){
+				GatewayJFrame.showMssageln("固件中未包含该命令"+command);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return res;
 	}
 	public String sendCommand(String command) {
+		String res = null;
 		try {
 			write(command);
-			return readUntilDoNothing(prompt + "");
+			res = readUntilDoNothing(prompt + "");
+			String baseCmd = null;
+			int spaceIndex = 0;
+			if((spaceIndex=command.indexOf(" "))==-1){
+				baseCmd = command;
+			}else {
+				baseCmd = command.substring(0,spaceIndex);
+			}
+//			System.out.println("---------------------------------------------------------------"+command+","+baseCmd);
+			if(res.contains("-ash: "+baseCmd+": not found")){
+				GatewayJFrame.showMssageln("固件中未包含该命令"+command);
+				res += "with error command not found";
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return null;
+		return res;
 	}
 
 	public void disconnect() {

@@ -18,6 +18,7 @@ import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import com.eastsoft.gateway.util.Ping;
 import com.eastsoft.gateway.util.ProgramDataManag;
 import com.eastsoft.scanningGun.barcode.BarcodeBuffer;
 import com.eastsoft.scanningGun.barcode.BarcodeProducter;
@@ -58,6 +59,8 @@ public class GatewayGeneralSet extends JPanel{
 	
 	//二维码扫描枪数据 获取，二维码信息生产者的启动和管理
 	private  BarcodeProducter barcodeProducter;
+
+	private String queueInfo;
 	
 	public static GatewayGeneralSet getInstance(){
 		if(null==instance){
@@ -185,27 +188,36 @@ public class GatewayGeneralSet extends JPanel{
 				//启用生产者
 				barcodeProducter = new BarcodeProducter();
 				barcodeProducter.startProduct();
-				
+
 				while(true){
 					/*if(null==gatewayJFrame){
 						gatewayJFrame = GatewayJFrame.getInstance();	//获取主框架单例
 					}*/
 					try {
-						String queueInfo = BarcodeBuffer.consume();
-						GatewayJFrame.showMssageln("扫码信息缓冲队列中获取二维码信息："+queueInfo+"");
-						qrcode_JTextField.setText("");
-						Thread.sleep(300);
-						qrcode_JTextField.setText(queueInfo);
-						Map map = getQrCode_Info();
-						GatewayJFrame.showMssage("解析得到标签信息如下\n"+
-						"sn:"+map.get("sn")+" gid:"+map.get("gid")+" pwd:"+map.get("pwd")+"\n");
-						GatewayJFrame.getInstance().getGatewayTest().allTest();
-						//Thread.sleep(2000);
-						qrcode_JTextField.setText("");
+						queueInfo = BarcodeBuffer.consume();
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					new Thread(new Runnable() {
+						@Override
+						public void run() {
+							try {
+								GatewayJFrame.showMssageln("扫码信息缓冲队列中获取二维码信息："+queueInfo+"");
+								qrcode_JTextField.setText("");
+								Thread.sleep(300);
+								qrcode_JTextField.setText(queueInfo);
+								Map map = getQrCode_Info();
+								GatewayJFrame.showMssage("解析得到标签信息如下\n"+
+										"sn:"+map.get("sn")+" gid:"+map.get("gid")+" pwd:"+map.get("pwd")+"\n");
+								GatewayJFrame.getInstance().getGatewayTest().allTest();
+								//Thread.sleep(2000);
+								qrcode_JTextField.setText("");
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}).start();
 				}
 			}
 		}).start();
@@ -240,11 +252,8 @@ public class GatewayGeneralSet extends JPanel{
 				}
 				String gip = gatewayIP_JTextField.getText();
 				String loip = localIP_JTextField.getText();
-				if(gip.length()>7&&loip.length()>7){
-					gip = gip.substring(0, 7);
-					loip = loip.substring(0, 7);
-				}
-				if (!gip.equals(loip)) {
+
+				if (!Ping.isSameSegment(gip,loip)) {
 					GatewayJFrame.showMssageln("本机和网关不再同一网段");
 				}
 			}
@@ -280,7 +289,7 @@ public class GatewayGeneralSet extends JPanel{
 	public Map<String,String> getQrCode_Info(){
 		String qrcodeinfo = qrcode_JTextField.getText();
 		if(null==qrcodeinfo||"".equals(qrcodeinfo)){
-			GatewayJFrame.showMssageln("没有输入网关条码信息,请检查输出确认程序是否已得到二维码信息...");
+			GatewayJFrame.showMssageln("没有输入网关条码信息...");
 			return null;
 		}
 		

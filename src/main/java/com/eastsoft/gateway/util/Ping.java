@@ -19,7 +19,7 @@ public class Ping{
     	boolean result = true;
     	Runtime runtime = Runtime.getRuntime();
     	BufferedReader bufferedReader = null;
-    	
+
     	try{
     		//System.out.println(pingCmd);
     		//GatewayJFrame.showMssageln(cmd);
@@ -40,7 +40,7 @@ public class Ping{
     		return false;
     	}finally{
     		try{
-    			
+
     			bufferedReader.close();
     		}catch(IOException e){
     			e.printStackTrace();
@@ -59,7 +59,7 @@ public class Ping{
     	Runtime runtime = Runtime.getRuntime();
     	String pingCmd = "ping "+ipAddress+" -n "+numOfPing+" -w "+timeout;
     	BufferedReader bufferedReader = null;
-    	
+
     	try{
     		//System.out.println(pingCmd);
     		GatewayJFrame.showMssage(pingCmd+"\n");
@@ -83,14 +83,14 @@ public class Ping{
     		return false;
     	}finally{
     		try{
-    			
+
     			bufferedReader.close();
     		}catch(IOException e){
     			e.printStackTrace();
     		}
     	}
     }
-    
+
     /**
      * 制定源地址的ping测试
      * @param targetIP
@@ -104,7 +104,7 @@ public class Ping{
     	Runtime runtime = Runtime.getRuntime();
     	String pingCmd = "ping "+targetIP+" -S "+sourceIP+" -n "+numOfPing+" -w "+timeout;
     	BufferedReader bufferedReader = null;
-    	
+
     	try{
     		//System.out.println(pingCmd);
     		GatewayJFrame.showMssage(pingCmd+"\n");
@@ -133,14 +133,14 @@ public class Ping{
     		return false;
     	}finally{
     		try{
-    			
+
     			bufferedReader.close();
     		}catch(IOException e){
     			e.printStackTrace();
     		}
     	}
     }
-    
+
     private static int getResultCheck(String line){
     	Pattern pattern = Pattern.compile("(\\d+ms)(\\s+)(TTL=\\d+)",Pattern.CASE_INSENSITIVE);
     	Matcher matcher = pattern.matcher(line);
@@ -149,7 +149,7 @@ public class Ping{
     	}
     	return 0;
     }
-    
+
     /**
      * 获得无限连接的接口名字
      * @param cmd
@@ -181,14 +181,14 @@ public class Ping{
     		return null;
     	}finally{
     		try{
-    			
+
     			bufferedReader.close();
     		}catch(IOException e){
     			e.printStackTrace();
     		}
     	}
     }
-    
+
     public static String getWifiStrength(String ssid){
     	Runtime runtime = Runtime.getRuntime();
     	String cmd = "netsh wlan show networks mode=bssid";
@@ -202,7 +202,7 @@ public class Ping{
     			return null;
     		}
     		bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "GBK"));
-    		
+
     		String line = null;
     		int count = 0;
     		Pattern p = Pattern.compile("\\d+(\\.\\d+)?%");
@@ -231,14 +231,14 @@ public class Ping{
     		return null;
     	}finally{
     		try{
-    			
+
     			bufferedReader.close();
     		}catch(IOException e){
     			e.printStackTrace();
     		}
     	}
     }
-    
+
     public static String getWifiIP(String hostIP){
     	try {
 			String localname = InetAddress.getLocalHost().getHostName().toString();
@@ -263,7 +263,25 @@ public class Ping{
 		}
 		return null;
     }
-    
+
+    public static boolean isSameSegment(String ip1,String ip2){
+        boolean isSameNet = false;
+        if(!(ip1==null||"".equals(ip1)||ip2==null||"".equals(ip2))){
+            int index1 = ip1.indexOf('.',ip1.indexOf('.')+1);
+            int index2 = ip2.indexOf('.',ip2.indexOf('.')+1);
+			if(index1==-1||index2==-1){
+				GatewayJFrame.showMssageln("无法自动判定IP所属网段，请检查IP地址格式是否错误!");
+			}else {
+				String net1 = ip1.substring(0,index1);
+				String net2 = ip2.substring(0,index2);
+//			System.out.println("index1=="+index1+" net1=="+net1);
+//			System.out.println("index2=="+index2+" net2=="+net2);
+				isSameNet = net1.equals(net2);
+			}
+        }
+        return isSameNet;
+    }
+
     public static void main(String[] args){
     	for(int i=0;i<3;i++){
     		if(null!=getWifiIP("192.168.1.2")){

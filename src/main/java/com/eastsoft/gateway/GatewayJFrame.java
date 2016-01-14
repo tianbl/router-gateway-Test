@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -23,15 +24,17 @@ import javax.swing.border.TitledBorder;
 
 import com.eastsoft.gateway.util.Connect;
 import com.eastsoft.gateway.util.ProgramDataManag;
+import com.eastsoft.gateway.util.ToolUtil;
 import com.eastsoft.scanningGun.barcode.BarcodeProducter;
 
 //主界用于组织各个功能模块，各模块分开编写
 public class GatewayJFrame extends JFrame{
 	
 	private static GatewayJFrame instance;
+	private static JTextArea jTextArea_View;
+	private static String stdoutLogPath;
 	
 	private JPanel jpanel_View;	//信息显示panel
-	private static JTextArea jTextArea_View;
 	private JScrollPane jScrollPane_View;	//添加滚动条
 	
 	private JTabbedPane jtab;	//个功能选项卡
@@ -52,6 +55,7 @@ public class GatewayJFrame extends JFrame{
 		setBackground(Color.WHITE);
 		this.setTitle("智能路由器网关测试工具");
 		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+		stdoutLogPath = getNowPath()+"/stdout.log";
 		initGUI();
 		System.out.println("GateTestJFrame signal instance...");
 	}
@@ -92,24 +96,22 @@ public class GatewayJFrame extends JFrame{
 		
 		
 		this.setSize(800, 700);
-		this.setLayout(new GridLayout(2,1));
+		this.setLayout(new GridLayout(2, 1));
 		this.add(jpanel_View);
 		this.add(jtab);
 		this.setVisible(true);
-		this.addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent e)
-			{
+		this.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
 				//System.out.println("触发windowClosing事件");
 				ProgramDataManag.deleteConf("routeTestData.ini");
 				GatewayGeneralSet.getInstance().saveVersion();
 				serverSet.saveVersion();
 				gateUpdate.saveVersion();
-				
+
 				GatewayGeneralSet.getInstance().stopProduct();
 			}
 
-			public void windowClosed(WindowEvent e)
-			{
+			public void windowClosed(WindowEvent e) {
 				//System.out.println("触发windowClosed事件");
 			}
 		});
@@ -132,11 +134,12 @@ public class GatewayJFrame extends JFrame{
 	
 	public static void showMssage(String str)
 	{
+		ToolUtil.appendMethod(stdoutLogPath, str);
 		jTextArea_View.append(str);
 		jTextArea_View.setSelectionStart(jTextArea_View.getText().length());
 	}
 	public static void showMssageln(String str){
-		showMssage(str+"\n");
+		showMssage(str + "\n");
 	}
 	public static void clearShow(){
 		jTextArea_View.setText("");
@@ -144,5 +147,15 @@ public class GatewayJFrame extends JFrame{
 	
 	public GatewayTest getGatewayTest(){
 		return gateTest;
+	}
+
+	public static String getNowPath() {
+		File directory = new File(".");
+		try {
+			return directory.getCanonicalPath();
+		} catch (Exception exp) {
+			exp.printStackTrace();
+			return null;
+		}
 	}
 }

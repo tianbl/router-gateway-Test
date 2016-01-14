@@ -86,5 +86,13 @@
             <artifactId>jsch</artifactId>
             <version>0.1.53</version>
         </dependency>
+
+        <!-- 添加md5计算-->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.10</version>
+        </dependency>
+
     </dependencies>
 </project>

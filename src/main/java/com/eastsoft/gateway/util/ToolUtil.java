@@ -1,5 +1,9 @@
 package com.eastsoft.gateway.util;
 
+import com.eastsoft.gateway.GatewayJFrame;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.poi.util.IOUtils;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -15,6 +19,10 @@ import java.io.Reader;
 
 public class ToolUtil
 {
+	//用于记录文件
+	public static FileWriter fileWriter;
+	public static int count = 0;
+
 	public static boolean isFileExist(String filename)
 	{
 		File file = new File(filename);
@@ -174,11 +182,50 @@ public class ToolUtil
             e.printStackTrace();
             return false;
         }
-
     }
+
+	public static void appendMethod(String fileName,String content){
+		try {
+			count++;
+			if(count%20==0){
+				fileWriter.close();
+				fileWriter = new FileWriter(fileName,true);
+			}else if(fileWriter==null){
+				fileWriter = new FileWriter(fileName,true);
+			}
+			fileWriter.write(content);
+			fileWriter.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static String calMd5FromFile(String filePath){
+		String md5 = null;
+		try{
+			FileInputStream fis= new FileInputStream(filePath);
+			md5 = DigestUtils.md5Hex(IOUtils.toByteArray(fis));
+			IOUtils.closeQuietly(fis);
+		}catch (Exception e){
+			GatewayJFrame.showMssageln("计算文件"+filePath+"的md5值出错");
+			e.printStackTrace();
+		}finally {
+			return md5;
+		}
+	}
         
 	public static void main(String[] args)
 	{
-		writeFile("asdfasdf","route_ver.ini");
+		int count = 0;
+		while (true){
+			count++;
+			appendMethod("C:\\Users\\baolei\\Desktop\\routeer\\111111111111.txt","content index="+count+"\n");
+			System.out.println("content index="+count);
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
