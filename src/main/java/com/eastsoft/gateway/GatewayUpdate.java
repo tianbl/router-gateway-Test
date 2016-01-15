@@ -88,13 +88,22 @@ public class GatewayUpdate extends JPanel implements ActionListener{
 					File file=jfc.getSelectedFile();
 					if(file.isDirectory()){
 						GatewayJFrame.showMssageln("请选择一个文件...");
-						
 					}else if(file.isFile()){
-						GatewayJFrame.showMssageln("文件:"+file.getAbsolutePath());
+						updateFileName = jfc.getSelectedFile().getName();
+						realPath = file.getAbsolutePath();
+						if(updateFileName.contains("(")||updateFileName.contains(")")){
+							int i = JOptionPane.showConfirmDialog(GatewayJFrame.getInstance(),
+									"固件命名中不能带有括号,请重新选择?","提示",
+									JOptionPane.DEFAULT_OPTION);
+							GatewayJFrame.showMssageln("请重新选择升级固件...");
+							updateFileName = null;
+							realPath = null;
+							fileChooser.setText("...");
+						}else {
+							GatewayJFrame.showMssageln("文件:"+file.getAbsolutePath());
+							fileChooser.setText(updateFileName);
+						}
 					}
-					updateFileName = jfc.getSelectedFile().getName();
-					realPath = file.getAbsolutePath();
-					fileChooser.setText(updateFileName);
 				}
 			});
 			this.add(fileLabel);
@@ -173,11 +182,14 @@ public class GatewayUpdate extends JPanel implements ActionListener{
 	}
 	
 	private boolean updateGateway(String gatewayip,String hostip){
+		if(null==updateFileName||updateFileName.equals("")){
+			GatewayJFrame.showMssageln("先选择升级文件");
+			return false;
+		}
 		Connect telnet = GatewayJFrame.getInstance().telnetGateway(gatewayIP_JTextField.getText(), 23);
 		if(null==telnet){
 			return false;
 		}
-		
 		telnet.sendCommand("cd /gateway/cpp/main");
 		String gw = telnet.sendCommand("./gateway.exe -v").split("\r\n")[1];
 		String hw = telnet.sendCommand("version hw show").split("\r\n")[1];
@@ -200,28 +212,29 @@ public class GatewayUpdate extends JPanel implements ActionListener{
 				return false;
 			}
 		}
-		if(null==updateFileName||updateFileName.equals("")){
-			GatewayJFrame.showMssageln("先选择升级文件");
-			return false;
-		}
-		
-		String setHw = telnet.sendCommand("version hw set "+hwLast_v);
-		if(setHw.contains("ok")){
-			GatewayJFrame.showMssageln("硬件版本号设置成功...升级系统");
-		}else{
-			GatewayJFrame.showMssageln("硬件版本号设置失败！");
-		}
-		//GatewayJFrame.showMssageln("fwupdate "+updateFileName+" "+hostip);
+
 		telnet.sendCommand("cd /tmp");
-		String download = telnet.sendCommand("tftp -g -r "+updateFileName+" "+hostip);
+		String download = telnet.sendCommand("tftp -g -r " + updateFileName + " " + hostip);
 		if(download.contains("timeout")){
 			GatewayJFrame.showMssageln("升级文件传输超时!");
 			return false;
+		}else if(download.contains("-ash: syntax error: unexpected \"(\"")){
+			GatewayJFrame.showMssageln("下载和升级命令不支持固件名称中带有括号,先将命名中的括号去掉");
+			return false;
 		}else if(download.contains("error")){
-			GatewayJFrame.showMssageln("发生错误!");
+			GatewayJFrame.showMssageln("路由器固件下载发生错误!");
 			return false;
 		}
+		String setHw = telnet.sendCommand("version hw set "+hwLast_v);
+		if(setHw.contains("ok")){
+			GatewayJFrame.showMssageln("硬件版本号设置成功...\n开始升级系统...");
+		}else{
+			GatewayJFrame.showMssageln("硬件版本号设置失败！");
+			return false;
+		}
+		//GatewayJFrame.showMssageln("fwupdate "+updateFileName+" "+hostip);
 		telnet.sendCommandLiner("sysupgrade -n "+updateFileName);
+		telnet.disconnect();
 		return true;
 	}
 	

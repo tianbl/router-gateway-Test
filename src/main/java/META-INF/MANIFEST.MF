@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Class-Path: netty-3.8.0.Final.jar akka-remote_2.10-2.3.13.jar akka-act
+ or_2.11-2.3.7.jar akka-slf4j_2.11-2.3.7.jar xml-apis-1.0.b2.jar uncom
+ mons-maths-1.2.2a.jar protobuf-java-2.5.0.jar jna-3.0.9.jar xmlbeans-
+ 2.2.0.jar commons-net-3.3.jar log4j-api-2.3.jar config-1.2.1.jar scal
+ a-library-2.10.4.jar akka-actor_2.10-2.3.13.jar jna-3.5.1.jar jsch-0.
+ 1.53.jar poi-3.9.jar mysql-connector-java-5.1.33.jar akka-testkit_2.1
+ 0-2.3.13.jar slf4j-api-1.7.5.jar mybatis-3.3.0.jar dom4j-1.6.1.jar sq
+ lite-jdbc-3.7.2.jar stax-api-1.0.1.jar platform-3.5.1.jar commons-cod
+ ec-1.10.jar
+Main-Class: com.eastsoft.gateway.Main
+

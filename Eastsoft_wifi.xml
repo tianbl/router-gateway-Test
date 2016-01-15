@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="GBK" standalone="no"?><WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
-	<name>Eastsoft_30006</name>
+	<name>Eastsoft_4020E4</name>
 	<SSIDConfig>
 		<SSID>
-			<hex>45617374736F66745F3330303036</hex>
-			<name>Eastsoft_30006</name>
+			<hex>45617374736F66745F343032304534</hex>
+			<name>Eastsoft_4020E4</name>
 		</SSID>
 	</SSIDConfig>
 	<connectionType>ESS</connectionType>
